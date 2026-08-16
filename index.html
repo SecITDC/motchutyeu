@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover" />
+<title>Happy Birthday, My Love 🏮</title>
+
+<!-- Tailwind CDN -->
+<script src="https://cdn.tailwindcss.com"></script>
+
+<!-- Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<!-- Leaflet -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<style>
+  :root{
+    --bg-deep:#120318;
+    --bg-deep-2:#1c0726;
+    --rose-deep:#8b1e3f;
+    --blush:#ffb6c1;
+    --gold:#ffd700;
+    --burgundy:#3d0f24;
+    --viet-red:#d0342c;
+  }
+
+  *{ -webkit-tap-highlight-color: transparent; }
+
+  html,body{
+    background: radial-gradient(120% 90% at 50% -10%, #2a0e3a 0%, var(--bg-deep) 55%, #0a0210 100%);
+    color: var(--blush);
+    font-family:'Quicksand', sans-serif;
+    overflow-x:hidden;
+    min-height:100%;
+    min-height:100vh;   /* fallback for browsers without dvh support */
+    min-height:100dvh;  /* accounts for iOS Safari's dynamic URL bar */
+  }
+
+  .playfair{ font-family:'Playfair Display', serif; }
+  .caveat{ font-family:'Caveat', cursive; }
+
+  .glow-gold{ text-shadow: 0 0 18px rgba(255,215,0,0.45); }
+  .glow-blush{ text-shadow: 0 0 14px rgba(255,182,193,0.35); }
+
+  /* Muted text tiers — explicit rgba rather than Tailwind's arbitrary-value
+     opacity modifier (text-[var(--blush)]/80), which leans on color-mix()
+     support we don't need to depend on. */
+  .text-blush-soft{ color: rgba(255,182,193,0.85); }
+  .text-blush-subtle{ color: rgba(255,182,193,0.62); }
+  .text-blush-faint{ color: rgba(255,182,193,0.42); }
+
+  /* ---------------- Lanterns ---------------- */
+  #lantern-field{ contain:strict; }
+
+  .lantern{
+    position:absolute;
+    bottom:-120px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    opacity:0;
+    will-change: transform, opacity;
+    animation-name: floatUp;
+    animation-timing-function: ease-in-out;
+    animation-iteration-count: infinite;
+    pointer-events:none;
+  }
+  .lantern .string, .lantern .tassel{ width:1px; background:rgba(255,215,0,0.5); }
+  .lantern .string{ height:10px; }
+  .lantern .cap{
+    width:60%; height:6px; border-radius:3px;
+    background: linear-gradient(90deg, #ffd700, #e6a800);
+  }
+  .lantern .body{
+    width:34px; height:44px;
+    border-radius:50% 50% 46% 46% / 62% 62% 40% 40%;
+    background: radial-gradient(circle at 50% 32%, #ffe9a8 0%, #ff9d4d 45%, #d0342c 85%, #8b1e3f 100%);
+    box-shadow: 0 0 16px 3px rgba(255,170,60,0.55), 0 0 34px 10px rgba(208,52,44,0.25);
+    position:relative;
+  }
+
+  /* Color variants — gold/rose (default), beige, and pink */
+  .lantern.pink .body{
+    background: radial-gradient(circle at 50% 32%, #fff0f4 0%, #ffb6c1 45%, #ff6f91 85%, #b3405e 100%);
+    box-shadow: 0 0 16px 3px rgba(255,182,193,0.6), 0 0 34px 10px rgba(255,111,145,0.3);
+  }
+  .lantern.beige .body{
+    background: radial-gradient(circle at 50% 32%, #fffaf0 0%, #f2e2c4 45%, #d9b98a 85%, #8b6f4e 100%);
+    box-shadow: 0 0 16px 3px rgba(242,226,196,0.55), 0 0 34px 10px rgba(217,185,138,0.3);
+  }
+  .lantern.pink .cap, .lantern.beige .cap{ background: linear-gradient(90deg, #ffd700, #e6a800); }
+  .lantern .body::before, .lantern .body::after{
+    content:"";
+    position:absolute; top:0; bottom:0; width:1px;
+    background:rgba(61,15,36,0.35);
+  }
+  .lantern .body::before{ left:33%; }
+  .lantern .body::after{ left:66%; }
+  .lantern .tassel{ height:8px; }
+
+  .lantern.small .body{ width:22px; height:30px; }
+  .lantern.large .body{ width:44px; height:58px; }
+
+  @keyframes floatUp{
+    0%{ transform: translateY(0) translateX(0) rotate(-2deg); opacity:0; }
+    8%{ opacity:.95; }
+    50%{ transform: translateY(-55vh) translateX(18px) rotate(3deg); }
+    92%{ opacity:.85; }
+    100%{ transform: translateY(-125vh) translateX(-14px) rotate(-3deg); opacity:0; }
+  }
+
+  #countdown-screen.celebrate .lantern{ animation-duration: 2.4s !important; }
+
+  /* ---------------- Lotus watermark ---------------- */
+  .lotus-watermark{ position:absolute; opacity:0.08; pointer-events:none; }
+
+  /* ---------------- Countdown ---------------- */
+  .countdown-box{
+    /* Solid gradient instead of backdrop-filter: same legibility without
+       live blur-sampling the animating lanterns behind it every frame. */
+    background: linear-gradient(160deg, rgba(139,30,63,0.55), rgba(18,3,24,0.8));
+    border:1px solid rgba(255,215,0,0.25);
+    border-radius:16px;
+    padding:14px 10px;
+    min-width:64px;
+    text-align:center;
+  }
+  .countdown-box span{
+    font-family:'Playfair Display', serif;
+    font-size:1.9rem;
+    font-weight:700;
+    color:var(--gold);
+    display:block;
+    line-height:1;
+  }
+  .countdown-box small{
+    font-size:0.62rem;
+    letter-spacing:0.12em;
+    text-transform:uppercase;
+    color:var(--blush);
+    opacity:.75;
+  }
+
+  .reveal-btn{
+    background: linear-gradient(120deg, var(--gold), #ffb347, var(--viet-red));
+    color:#2a0710;
+    font-weight:700;
+    box-shadow: 0 0 24px rgba(255,215,0,0.4);
+  }
+
+  /* ---------------- Fade in main ---------------- */
+  .animate-fadein{ animation: fadeIn 1s ease forwards; }
+  @keyframes fadeIn{ from{opacity:0; transform:translateY(12px);} to{opacity:1; transform:translateY(0);} }
+
+  /* ---------------- Music button ---------------- */
+  /* Positioned with env(safe-area-inset-*) so it clears the notch/Dynamic
+     Island; pulse ring is a ::after animated with transform/opacity only
+     (not box-shadow) so it composites on the GPU instead of repainting. */
+  #music-btn{ top: calc(1rem + env(safe-area-inset-top)); right: calc(1rem + env(safe-area-inset-right)); }
+  #music-hint{ top: calc(3.9rem + env(safe-area-inset-top)); right: calc(1rem + env(safe-area-inset-right)); }
+  .music-btn{
+    background: radial-gradient(circle, rgba(255,215,0,0.9), rgba(208,52,44,0.85));
+  }
+  .music-btn::after{
+    content:"";
+    position:absolute; inset:0;
+    border-radius:9999px;
+    border:2px solid rgba(255,215,0,0.55);
+    transform:scale(1);
+    opacity:0.7;
+    animation: pulseRing 2.4s ease-out infinite;
+    pointer-events:none;
+  }
+  .music-btn.playing{ box-shadow: 0 0 18px 4px rgba(255,215,0,0.5); }
+  .music-btn.playing::after{ animation:none; opacity:0; }
+  @keyframes pulseRing{
+    0%{ transform:scale(1); opacity:0.7; }
+    100%{ transform:scale(1.9); opacity:0; }
+  }
+
+  /* ---------------- Postcard ---------------- */
+  .postcard-wrap{ perspective: 1400px; }
+  .postcard{
+    position:relative;
+    border-radius:18px;
+    background: linear-gradient(160deg, #ffc9d1, #ff9fb3);
+    box-shadow: 0 18px 40px rgba(0,0,0,0.45);
+    overflow:hidden;
+    cursor:pointer;
+  }
+  .postcard-flap{
+    position:absolute; top:0; left:0; right:0; height:55%;
+    background: linear-gradient(160deg, #ff8fa3, #e05c78);
+    clip-path: polygon(0 0, 100% 0, 50% 100%);
+    transform-origin: top center;
+    transition: transform 0.9s cubic-bezier(.7,0,.3,1);
+    z-index:3;
+  }
+  .postcard.open .postcard-flap{ transform: rotateX(178deg); }
+  .postcard-front-label{
+    position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:flex-end;
+    padding-bottom:22px; z-index:2; text-align:center;
+    transition: opacity .4s;
+  }
+  .postcard.open .postcard-front-label{ opacity:0; pointer-events:none; }
+  .postcard-letter{
+    position:relative; z-index:1;
+    padding:26px 20px 24px;
+    min-height:280px;
+    opacity:0; transform: translateY(16px);
+    transition: opacity .6s .35s, transform .6s .35s;
+  }
+  .postcard.open .postcard-letter{ opacity:1; transform: translateY(0); }
+
+  /* Framed photo of a real handwritten note, in place of typed letter text */
+  .note-frame{
+    position:relative; z-index:1;
+    background:#fffdf7;
+    border-radius:10px;
+    padding:10px;
+    box-shadow: 0 10px 22px rgba(0,0,0,0.22);
+    transform: rotate(-1.2deg);
+  }
+  .note-image{
+    display:block;
+    width:100%;
+    max-height:56vh;
+    object-fit:contain;
+    border-radius:6px;
+    background:#fffdf7;
+  }
+  .note-fallback-text{ color: rgba(74,14,46,0.7); }
+
+  /* ---------------- Gallery ---------------- */
+  .gallery-scroll{ scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; }
+  .gallery-scroll img{ scroll-snap-align:center; }
+
+  /* ---------------- Map pins ---------------- */
+  .map-pin{
+    font-size:20px; width:34px; height:34px; border-radius:50% 50% 50% 0;
+    transform: rotate(45deg);
+    display:flex; align-items:center; justify-content:center;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.5);
+  }
+  .map-pin span{ transform: rotate(-45deg); display:block; }
+  .lantern-pin{ background: linear-gradient(140deg, #ffd700, #d0342c); }
+  .heart-pin{ background: linear-gradient(140deg, #ff8fa3, #8b1e3f); }
+  #memory-map{ filter: sepia(18%) hue-rotate(275deg) saturate(140%) brightness(0.85) contrast(1.05); }
+  .leaflet-popup-content-wrapper{ background:#2a0e1c; color:#ffe4ea; border-radius:12px; }
+  .leaflet-popup-tip{ background:#2a0e1c; }
+  /* Leaflet's default zoom buttons render at ~26px, under the 44px touch
+     target minimum. !important is intentional here — overriding the
+     library's own bundled CSS. */
+  .leaflet-control-zoom a{
+    width:44px !important;
+    height:44px !important;
+    line-height:44px !important;
+    font-size:20px !important;
+  }
+
+  /* ---------------- Gift / video modal ---------------- */
+  .gift-box-btn{
+    background: linear-gradient(150deg, var(--viet-red), var(--rose-deep));
+    box-shadow: 0 10px 26px rgba(208,52,44,0.4);
+  }
+
+  /* ---------------- Dev toggle ---------------- */
+  /* The button itself is a full 44x44 tap target (Apple HIG allows hit
+     area to exceed the visible control); the pill inside stays subtle. */
+  #dev-toggle{
+    position:fixed;
+    left:50%;
+    bottom: calc(0.5rem + env(safe-area-inset-bottom));
+    transform: translateX(-50%);
+    width:44px; height:44px;
+    display:flex; align-items:center; justify-content:center;
+    z-index:80;
+  }
+  #dev-toggle .pill{
+    opacity:0.16; transition: opacity .3s;
+    font-size:9px; color: rgba(255,182,193,0.75);
+    background: rgba(0,0,0,0.3);
+    padding:4px 12px; border-radius:9999px;
+    white-space:nowrap;
+  }
+  #dev-toggle:active .pill, #dev-toggle:hover .pill{ opacity:0.7; }
+
+  @media (prefers-reduced-motion: reduce){
+    .lantern{ animation: none !important; opacity:.4 !important; }
+    .music-btn{ animation:none !important; }
+    .animate-fadein{ animation: none !important; }
+  }
+</style>
+</head>
+
+<body class="min-h-screen w-full relative">
+
+<!-- Reusable SVG defs: lotus motif -->
+<svg width="0" height="0" style="position:absolute">
+  <symbol id="lotus" viewBox="0 0 100 100">
+    <g fill="currentColor">
+      <ellipse cx="50" cy="55" rx="10" ry="26" transform="rotate(0 50 55)"/>
+      <ellipse cx="50" cy="55" rx="10" ry="26" transform="rotate(45 50 55)"/>
+      <ellipse cx="50" cy="55" rx="10" ry="26" transform="rotate(90 50 55)"/>
+      <ellipse cx="50" cy="55" rx="10" ry="26" transform="rotate(135 50 55)"/>
+      <ellipse cx="50" cy="55" rx="10" ry="26" transform="rotate(-45 50 55)"/>
+      <circle cx="50" cy="55" r="8"/>
+    </g>
+  </symbol>
+</svg>
+
+<!-- Floating music button -->
+<button id="music-btn" aria-label="Toggle music" class="music-btn fixed top-4 right-4 z-[60] w-12 h-12 rounded-full flex items-center justify-center text-lg select-none">
+  🎵
+</button>
+<span id="music-hint" class="fixed top-[62px] right-4 z-[60] text-[10px] tracking-wide text-blush-subtle select-none">Tap for Music</span>
+<audio id="bg-audio" loop preload="none">
+  <source src="audio/risk-it-all.mp3" type="audio/mpeg">
+</audio>
+
+<!-- ================= COUNTDOWN SCREEN (State A) ================= -->
+<section id="countdown-screen" class="fixed inset-0 z-40 flex flex-col items-center justify-center text-center px-6 overflow-hidden">
+  <div id="lantern-field" class="absolute inset-0 overflow-hidden"></div>
+
+  <svg class="lotus-watermark w-64 h-64 text-[var(--gold)] -top-8 -left-10" ><use href="#lotus"/></svg>
+  <svg class="lotus-watermark w-72 h-72 text-[var(--viet-red)] -bottom-16 -right-14"><use href="#lotus"/></svg>
+
+  <div class="relative z-10 flex flex-col items-center">
+    <p class="playfair italic text-sm sm:text-base tracking-[0.25em] uppercase text-[var(--gold)] mb-3 glow-gold">Hội An Lantern Festival</p>
+    <h1 class="playfair text-3xl sm:text-4xl font-semibold mb-3 glow-blush">🏮 A Special Day Awaits 🏮</h1>
+    <p class="text-sm sm:text-base text-blush-soft mb-9 max-w-xs">Counting down to your special day...</p>
+
+    <div id="countdown" class="grid grid-cols-4 gap-2.5 sm:gap-4">
+      <div class="countdown-box"><span id="cd-days">00</span><small>Days</small></div>
+      <div class="countdown-box"><span id="cd-hours">00</span><small>Hours</small></div>
+      <div class="countdown-box"><span id="cd-mins">00</span><small>Mins</small></div>
+      <div class="countdown-box"><span id="cd-secs">00</span><small>Secs</small></div>
+    </div>
+
+    <button id="reveal-btn" class="reveal-btn hidden mt-10 px-7 py-4 rounded-full text-sm sm:text-base tracking-wide">
+      🎉 Your Day Has Arrived — Tap to Open
+    </button>
+  </div>
+</section>
+
+<!-- ================= MAIN CONTENT (State B) ================= -->
+<main id="main-content" class="hidden relative z-10 pb-24">
+
+  <header class="pt-14 pb-10 px-6 text-center relative overflow-hidden">
+    <svg class="lotus-watermark w-56 h-56 text-[var(--gold)] top-0 left-1/2 -translate-x-1/2"><use href="#lotus"/></svg>
+    <p class="playfair italic text-xs tracking-[0.3em] uppercase text-[var(--gold)] mb-2 relative">Chúc Mừng Sinh Nhật</p>
+    <h1 class="playfair text-4xl sm:text-5xl font-semibold relative glow-blush">Happy Birthday, My Love</h1>
+    <p class="text-sm text-blush-soft mt-3 relative max-w-sm mx-auto">
+      Every lantern on this river carries a wish — tonight, all of mine are for you.
+    </p>
+  </header>
+
+  <!-- Postcard -->
+  <section class="px-6 mt-6">
+    <h2 class="playfair text-xl text-center mb-5 text-[var(--gold)]">A Little Letter For You</h2>
+    <div class="postcard-wrap max-w-sm mx-auto">
+      <div class="postcard" id="postcard">
+        <div class="postcard-front-label">
+          <p class="caveat text-2xl text-[#4a0e2e]">Tap to open ✦</p>
+        </div>
+        <div class="postcard-flap"></div>
+        <div class="postcard-letter">
+          <svg class="lotus-watermark w-20 h-20 text-[#8b1e3f] -bottom-3 -right-3"><use href="#lotus"/></svg>
+          <div class="note-frame">
+            <img id="note-image" src="images/handwritten-note.jpg" alt="A handwritten letter" class="note-image" loading="lazy">
+            <p id="note-fallback" class="hidden text-center text-sm note-fallback-text mt-1">
+              Your handwritten note will appear here once you add it at <strong>images/handwritten-note.jpg</strong>.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Memory Map -->
+  <section class="px-6 mt-14">
+    <h2 class="playfair text-xl text-center mb-2 text-[var(--gold)]">Our Journey</h2>
+    <p class="text-center text-xs text-blush-subtle mb-5">Two pins. One story still being written.</p>
+    <div id="memory-map" class="h-72 rounded-2xl shadow-2xl border border-[var(--gold)]/20"></div>
+  </section>
+
+  <!-- Photo gallery -->
+  <section class="mt-14">
+    <h2 class="playfair text-xl text-center mb-5 text-[var(--gold)]">Moments We've Made</h2>
+    <div class="gallery-scroll flex gap-4 overflow-x-auto px-6 pb-3">
+      <img src="pictures/mem1.PNG" alt="Memory 1" class="w-60 h-80 object-cover rounded-2xl shadow-xl flex-shrink-0" loading="lazy">
+      <img src="pictures/mem2.png" alt="Memory 2" class="w-60 h-80 object-cover rounded-2xl shadow-xl flex-shrink-0" loading="lazy">
+      <img src="pictures/mem3.png" alt="Memory 3" class="w-60 h-80 object-cover rounded-2xl shadow-xl flex-shrink-0" loading="lazy">
+      <img src="pictures/mem4.png" alt="Memory 4" class="w-60 h-80 object-cover rounded-2xl shadow-xl flex-shrink-0" loading="lazy">
+      <img src="pictures/mem5.png" alt="Memory 5" class="w-60 h-80 object-cover rounded-2xl shadow-xl flex-shrink-0" loading="lazy">
+      <img src="pictures/mem6.png" alt="Memory 6" class="w-60 h-80 object-cover rounded-2xl shadow-xl flex-shrink-0" loading="lazy">
+    </div>
+    <p class="text-center text-[10px] text-blush-faint mt-2 px-6">Swipe to see more →</p>
+  </section>
+
+  <!-- Gift / video -->
+  <section class="px-6 mt-16 text-center">
+    <h2 class="playfair text-xl mb-5 text-[var(--gold)]">One More Thing...</h2>
+    <button id="gift-btn" class="gift-box-btn text-white font-semibold px-8 py-4 rounded-full text-sm sm:text-base">
+      🎁 Open Your Gift
+    </button>
+  </section>
+
+  <footer class="text-center mt-16 px-6">
+    <svg class="w-10 h-10 mx-auto text-[var(--gold)] opacity-70 mb-2"><use href="#lotus"/></svg>
+    <p class="caveat text-2xl text-[var(--gold)]">Happy Birthday, always and again 🏮</p>
+  </footer>
+</main>
+
+<!-- Video modal -->
+<div id="video-modal" class="fixed inset-0 hidden z-[70] bg-black/85 flex items-center justify-center px-6">
+  <div class="relative w-full max-w-sm">
+    <button id="close-video" aria-label="Close video" class="absolute -top-14 right-0 w-11 h-11 flex items-center justify-center text-[var(--blush)] text-3xl leading-none">✕</button>
+    <video id="birthday-video" controls playsinline class="w-full rounded-2xl shadow-2xl bg-black">
+      <source src="video/message.MP4" type="video/mp4">
+      Your browser does not support the video tag.
+    </video>
+    <p id="video-fallback" class="hidden text-center text-sm text-blush-subtle mt-4">
+      Your video message will appear here once you add it at <span class="text-[var(--gold)]">video/message.mp4</span>.
+    </p>
+  </div>
+</div>
+
+<!-- Dev preview toggle: 44x44 tap target with a visually subtle pill inside -->
+<button id="dev-toggle" aria-label="Dev preview: unlock now">
+  <span class="pill">Dev Preview / Unlock Now</span>
+</button>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ---------- Generate floating lanterns ---------- */
+  function spawnLanterns(container, count){
+    for(let i=0;i<count;i++){
+      const lantern = document.createElement('div');
+      const sizeClass = ['small','','large'][Math.floor(Math.random()*3)];
+      // Weighted mix: classic gold/rose, plus beige and pink accents
+      const colorClass = ['', '', 'pink', 'pink', 'beige'][Math.floor(Math.random()*5)];
+      lantern.className = ['lantern', sizeClass, colorClass].filter(Boolean).join(' ');
+      lantern.style.left = (Math.random()*94 + 2) + '%';
+      const duration = 14 + Math.random()*10;
+      lantern.style.animationDuration = duration + 's';
+      lantern.style.animationDelay = (Math.random()*duration) + 's';
+      lantern.innerHTML = '<span class="cap"></span><span class="string"></span><span class="body"></span><span class="tassel"></span>';
+      container.appendChild(lantern);
+    }
+  }
+  const lanternField = document.getElementById('lantern-field');
+  if(lanternField) spawnLanterns(lanternField, 12);
+
+  /* ---------- Gentle synthesized reveal chime (no external audio needed) ---------- */
+  function playChime(){
+    try{
+      const Ctx = window.AudioContext || window.webkitAudioContext;
+      const ctx = new Ctx();
+      const notes = [523.25, 659.25, 783.99, 1046.5]; // C5 E5 G5 C6
+      const lastNoteStart = (notes.length - 1) * 0.16;
+      notes.forEach((freq, i) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.value = freq;
+        const start = ctx.currentTime + i*0.16;
+        gain.gain.setValueAtTime(0, start);
+        gain.gain.linearRampToValueAtTime(0.15, start + 0.05);
+        gain.gain.exponentialRampToValueAtTime(0.001, start + 1.1);
+        osc.connect(gain).connect(ctx.destination);
+        osc.start(start);
+        osc.stop(start + 1.2);
+      });
+      // Release the context once playback finishes so repeated unlocks
+      // never accumulate open AudioContext instances.
+      setTimeout(() => { ctx.close().catch(() => {}); }, (lastNoteStart + 1.3) * 1000);
+    }catch(e){ /* audio not available, fail silently */ }
+  }
+
+  /* ---------- Countdown logic ---------- */
+  // Aug 19 2026 00:00:00 Hanoi time (Asia/Ho_Chi_Minh, UTC+7 — no DST)
+  const target = new Date('2026-08-19T00:00:00+07:00').getTime();
+  const cdDays = document.getElementById('cd-days');
+  const cdHours = document.getElementById('cd-hours');
+  const cdMins = document.getElementById('cd-mins');
+  const cdSecs = document.getElementById('cd-secs');
+  const countdownGrid = document.getElementById('countdown');
+  const revealBtn = document.getElementById('reveal-btn');
+
+  let timer = null;
+  function pad(n){ return String(n).padStart(2,'0'); }
+
+  function tick(){
+    const diff = target - Date.now();
+    if(diff <= 0){
+      clearInterval(timer);
+      countdownGrid.classList.add('hidden');
+      revealBtn.classList.remove('hidden');
+      return;
+    }
+    const d = Math.floor(diff / 86400000);
+    const h = Math.floor((diff % 86400000) / 3600000);
+    const m = Math.floor((diff % 3600000) / 60000);
+    const s = Math.floor((diff % 60000) / 1000);
+    cdDays.textContent = pad(d);
+    cdHours.textContent = pad(h);
+    cdMins.textContent = pad(m);
+    cdSecs.textContent = pad(s);
+  }
+  timer = setInterval(tick, 1000);
+  tick();
+
+  /* ---------- Unlock / reveal ---------- */
+  let mapInitialized = false;
+  let unlocked = false; // guards against re-entry if the dev toggle is pressed more than once
+
+  function unlockSite(){
+    if(unlocked) return;
+    unlocked = true;
+
+    const screen = document.getElementById('countdown-screen');
+    const main = document.getElementById('main-content');
+    screen.classList.add('celebrate');
+    playChime();
+
+    setTimeout(() => {
+      screen.style.display = 'none';
+      main.classList.remove('hidden');
+      main.classList.add('animate-fadein');
+      if(!mapInitialized){ initMap(); mapInitialized = true; }
+    }, 900);
+  }
+
+  revealBtn.addEventListener('click', unlockSite);
+  document.getElementById('dev-toggle').addEventListener('click', () => {
+    if(timer) clearInterval(timer);
+    unlockSite();
+  });
+
+  /* ---------- Postcard ---------- */
+  const postcard = document.getElementById('postcard');
+  postcard.addEventListener('click', () => postcard.classList.toggle('open'));
+
+  // Graceful fallback if the handwritten-note image hasn't been added yet
+  const noteImage = document.getElementById('note-image');
+  const noteFallback = document.getElementById('note-fallback');
+  noteImage.addEventListener('error', () => {
+    noteImage.classList.add('hidden');
+    noteFallback.classList.remove('hidden');
+  }, { once: true });
+
+  /* ---------- Map locations (edit here) ---------- */
+  const LOCATIONS = {
+    met: {
+      name: 'Bắc Giang',
+      lat: 21.280984,
+      lng: 106.214260,
+      popup: 'Bắc Giang — This is where everything started'
+    },
+    adventure: {
+      name: 'Sa Pa',
+      lat: 22.3402,
+      lng: 103.8214,
+      popup: 'Sa Pa — Our next adventure'
+    }
+  };
+
+ /* ---------- Leaflet memory map ---------- */
+ function initMap(){
+    const map = L.map('memory-map', {
+      zoomControl: true,
+      attributionControl: true,
+      scrollWheelZoom: false
+    });
+
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+      attribution: '&copy; OpenStreetMap &copy; CARTO',
+      maxZoom: 18
+    }).addTo(map);
+
+    const lanternIcon = L.divIcon({
+      html: '<div class="map-pin lantern-pin"><span>🏮</span></div>',
+      className: '', iconSize: [34,34], iconAnchor: [17,34], popupAnchor: [0,-30]
+    });
+    const heartIcon = L.divIcon({
+      html: '<div class="map-pin heart-pin"><span>❤️</span></div>',
+      className: '', iconSize: [34,34], iconAnchor: [17,34], popupAnchor: [0,-30]
+    });
+
+    L.marker([LOCATIONS.met.lat, LOCATIONS.met.lng], { icon: lanternIcon })
+      .addTo(map)
+      .bindPopup(LOCATIONS.met.popup);
+
+    L.marker([LOCATIONS.adventure.lat, LOCATIONS.adventure.lng], { icon: heartIcon })
+      .addTo(map)
+      .bindPopup(LOCATIONS.adventure.popup);
+
+    map.fitBounds([
+      [LOCATIONS.met.lat, LOCATIONS.met.lng],
+      [LOCATIONS.adventure.lat, LOCATIONS.adventure.lng]
+    ], { padding: [36, 36], maxZoom: 7 });
+
+    setTimeout(() => map.invalidateSize(), 200);
+  }
+
+  /* ---------- Gift / video modal ---------- */
+  const giftBtn = document.getElementById('gift-btn');
+  const videoModal = document.getElementById('video-modal');
+  const closeVideo = document.getElementById('close-video');
+  const video = document.getElementById('birthday-video');
+  const videoFallback = document.getElementById('video-fallback');
+
+  video.addEventListener('error', () => {
+    video.classList.add('hidden');
+    videoFallback.classList.remove('hidden');
+  }, { once: true });
+
+  giftBtn.addEventListener('click', () => {
+    videoModal.classList.remove('hidden');
+  });
+  closeVideo.addEventListener('click', () => {
+    videoModal.classList.add('hidden');
+    video.pause();
+  });
+  videoModal.addEventListener('click', (e) => {
+    if(e.target === videoModal){ videoModal.classList.add('hidden'); video.pause(); }
+  });
+
+  /* ---------- Background music (iOS-safe: only plays on user gesture) ---------- */
+  const musicBtn = document.getElementById('music-btn');
+  const musicHint = document.getElementById('music-hint');
+  const bgAudio = document.getElementById('bg-audio');
+  let playing = false;
+
+  musicBtn.addEventListener('click', () => {
+    if(!playing){
+      bgAudio.volume = 0.6;
+      bgAudio.play().then(() => {
+        playing = true;
+        musicBtn.classList.add('playing');
+        musicBtn.textContent = '🎶';
+        musicHint.style.opacity = '0';
+      }).catch(() => {
+        // Autoplay/file not available — no-op, user can retry
+      });
+    } else {
+      bgAudio.pause();
+      playing = false;
+      musicBtn.classList.remove('playing');
+      musicBtn.textContent = '🎵';
+      musicHint.style.opacity = '1';
+    }
+  });
+
+})();
+</script>
+</body>
+</html>
