@@ -262,7 +262,7 @@
     font-size:20px !important;
   }
 
-  /* ---------------- Gift / video modal ---------------- */
+  /* ---------------- Gift / image modal ---------------- */
   .gift-box-btn{
     background: linear-gradient(150deg, var(--viet-red), var(--rose-deep));
     box-shadow: 0 10px 26px rgba(208,52,44,0.4);
@@ -402,11 +402,11 @@
     <p class="text-center text-[10px] text-blush-faint mt-2 px-6">Swipe to see more →</p>
   </section>
 
-  <!-- Gift / video -->
+  <!-- Gift / image -->
   <section class="px-6 mt-16 text-center">
     <h2 class="playfair text-xl mb-5 text-[var(--gold)]">One More Thing...</h2>
     <button id="gift-btn" class="gift-box-btn text-white font-semibold px-8 py-4 rounded-full text-sm sm:text-base">
-      🎁 Open Your Gift
+      🎁 Open Your Present
     </button>
   </section>
 
@@ -416,16 +416,13 @@
   </footer>
 </main>
 
-<!-- Video modal -->
-<div id="video-modal" class="fixed inset-0 hidden z-[70] bg-black/85 flex items-center justify-center px-6">
+<!-- Gift image modal -->
+<div id="gift-modal" class="fixed inset-0 hidden z-[70] bg-black/85 flex items-center justify-center px-6">
   <div class="relative w-full max-w-sm">
-    <button id="close-video" aria-label="Close video" class="absolute -top-14 right-0 w-11 h-11 flex items-center justify-center text-[var(--blush)] text-3xl leading-none">✕</button>
-    <video id="birthday-video" controls playsinline class="w-full rounded-2xl shadow-2xl bg-black">
-      <source src="video/message.MP4" type="video/mp4">
-      Your browser does not support the video tag.
-    </video>
-    <p id="video-fallback" class="hidden text-center text-sm text-blush-subtle mt-4">
-      Your video message will appear here once you add it at <span class="text-[var(--gold)]">video/message.mp4</span>.
+    <button id="close-gift" aria-label="Close gift" class="absolute -top-14 right-0 w-11 h-11 flex items-center justify-center text-[var(--blush)] text-3xl leading-none">✕</button>
+    <img id="gift-image" src="images/message.png" alt="Your birthday gift" class="w-full max-h-[75vh] object-contain rounded-2xl shadow-2xl bg-black" loading="lazy">
+    <p id="gift-fallback" class="hidden text-center text-sm text-blush-subtle mt-4">
+      Your gift image will appear here once you add it at <span class="text-[var(--gold)]">images/message.png</span>.
     </p>
   </div>
 </div>
@@ -610,27 +607,28 @@
     setTimeout(() => map.invalidateSize(), 200);
   }
 
-  /* ---------- Gift / video modal ---------- */
+  /* ---------- Gift / image modal ---------- */
   const giftBtn = document.getElementById('gift-btn');
-  const videoModal = document.getElementById('video-modal');
-  const closeVideo = document.getElementById('close-video');
-  const video = document.getElementById('birthday-video');
-  const videoFallback = document.getElementById('video-fallback');
+  const giftModal = document.getElementById('gift-modal');
+  const closeGift = document.getElementById('close-gift');
+  const giftImage = document.getElementById('gift-image');
+  const giftFallback = document.getElementById('gift-fallback');
 
-  video.addEventListener('error', () => {
-    video.classList.add('hidden');
-    videoFallback.classList.remove('hidden');
+  giftImage.addEventListener('error', () => {
+    giftImage.classList.add('hidden');
+    giftFallback.classList.remove('hidden');
   }, { once: true });
 
+  function closeGiftModal(){
+    giftModal.classList.add('hidden');
+  }
+
   giftBtn.addEventListener('click', () => {
-    videoModal.classList.remove('hidden');
+    giftModal.classList.remove('hidden');
   });
-  closeVideo.addEventListener('click', () => {
-    videoModal.classList.add('hidden');
-    video.pause();
-  });
-  videoModal.addEventListener('click', (e) => {
-    if(e.target === videoModal){ videoModal.classList.add('hidden'); video.pause(); }
+  closeGift.addEventListener('click', closeGiftModal);
+  giftModal.addEventListener('click', (e) => {
+    if(e.target === giftModal) closeGiftModal();
   });
 
   /* ---------- Background music (iOS-safe: only plays on user gesture) ---------- */
